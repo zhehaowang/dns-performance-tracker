@@ -1,8 +1,10 @@
 #include <iostream>
 #include <string>
+#include <memory>
 
 #include <query_sender.h>
-#include <report_cmdlinereporter.h>
+//#include <report_cmdlinereporter.h>
+#include <report_mysqlreporter.h>
 
 int main(int argc, char *argv[]) {
     using namespace std;
@@ -10,9 +12,8 @@ int main(int argc, char *argv[]) {
 
     std::cout << "main\n";
 
-    report::CmdlineReporter reporter;
-
-    query::QuerySender query(&reporter);
+   	// query::QuerySender query(std::make_shared<report::CmdlineReporter>());
+   	query::QuerySender query(std::make_shared<report::MySQLReporter>("dpt", "localhost", "root", ""));
     query.sendQuery("123.www.google.com");
 
     return 0;

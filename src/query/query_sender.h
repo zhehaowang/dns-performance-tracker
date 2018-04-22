@@ -4,24 +4,26 @@
 #include <report_reporterinterface.h>
 
 #include <string>
+#include <memory>
 
 namespace dpt {
 namespace query {
 
 class QuerySender {
   public:
-    QuerySender(report::ReporterInterface *reporter);
+    QuerySender(std::shared_ptr<report::ReporterInterface> reporter);
+
     int sendQuery(const std::string& dest);
   private:
-  	report::ReporterInterface *p_reporter;
+  	std::shared_ptr<report::ReporterInterface> p_reporter;
 };
 
 inline
-QuerySender::QuerySender(report::ReporterInterface *reporter)
+QuerySender::QuerySender(std::shared_ptr<report::ReporterInterface> reporter)
  : p_reporter(reporter)
 {};
 
 }
-} 
+}
 
 #endif
