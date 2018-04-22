@@ -1,39 +1,48 @@
 #ifndef INCLUDED_REPORT_RECORD
 #define INCLUDED_REPORT_RECORD
 
-#include <chrono>
 #include <cstdint>
+#include <string>
 
 namespace dpt {
 namespace report {
 
 class Record {
   public:
-    Record(const std::chrono::milliseconds& duration,
-    	   const std::chrono::milliseconds& timestamp);
+    Record(const std::string& domain,
+           uint64_t           duration,
+           bool               isSuccess);
 
-    std::uint64_t durationAsUInt64() const;
-    std::uint64_t timestampAsUInt64() const;
+    const std::string& domain() const;
+    std::uint64_t duration() const;
+    bool isSuccess() const;
   private:
-  	std::chrono::milliseconds d_duration;
-  	std::chrono::milliseconds d_timestamp;
+    std::string               d_domain;
+  	uint64_t d_duration;
+    bool                      d_isSuccess;
 };
 
 inline
-Record::Record(const std::chrono::milliseconds& duration,
-    	   	   const std::chrono::milliseconds& timestamp)
- : d_duration(duration), d_timestamp(timestamp)
+Record::Record(const std::string& domain,
+               uint64_t           duration,
+               bool               isSuccess)
+  : d_domain(domain),
+    d_duration(duration),
+    d_isSuccess(isSuccess)
 {}
 
 inline
-std::uint64_t Record::durationAsUInt64() const {
-    return d_duration.count();
+const std::string& Record::domain() const {
+  return d_domain;
 }
 
 inline
-std::uint64_t Record::timestampAsUInt64() const {
-    return d_timestamp.count();
+uint64_t Record::duration() const {
+    return d_duration;
 }
+
+inline
+bool Record::isSuccess() const { return d_isSuccess; }
 
 }
 }

@@ -1,4 +1,5 @@
 #include <query_sender.h>
+#include <query_util.h>
 
 #include <report_record.h>
 
@@ -9,9 +10,15 @@
 namespace dpt {
 namespace query {
 
+namespace {
+const int RANDOM_CHAR_LEN = 8;
+}
+
 // https://git.nlnetlabs.nl/ldns/tree/examples/ldns-mx.c
 int QuerySender::sendQuery(const std::string& dest) {
-    ldns_rdf *domain = ldns_dname_new_frm_str(dest.c_str());
+    std::string queryDomain = QueryUtil::prependRandomDomain(dest, RANDOM_CHAR_LEN);
+
+    ldns_rdf *domain = ldns_dname_new_frm_str(queryDomain.c_str());
     if (!domain) {
         std::cerr << dest << " cannot be parsed" << std::endl;
         return -1;
@@ -38,14 +45,19 @@ int QuerySender::sendQuery(const std::string& dest) {
 
     if (!response) {
         std::cerr << "Query for " << domain << " failed" << std::endl;
+
+        report::Record record(dest, 0, false);
+        if (p_reporter) {
+            p_reporter->reportRecord(record);
+        }
     } else {
         std::cerr << "Query for " << domain << " succeeded" << std::endl;
-        ldns_pkt_free(response);
-    }
 
-    report::Record record(elapsed, now);
-    if (p_reporter) {
-        p_reporter->reportRecord(record);
+        report::Record record(dest, elapsed.count(), true);
+        if (p_reporter) {
+            p_reporter->reportRecord(record);
+        }
+        ldns_pkt_free(response);
     }
 
     ldns_rdf_deep_free(domain);

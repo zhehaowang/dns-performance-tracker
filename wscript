@@ -28,6 +28,7 @@ def configure(conf):
     conf.check_cxx(lib = 'ldns', define_name = 'HAVE_LDNS', uselib_store = 'ldns', mandatory = True)
 
     conf.check_cxx(header_name = 'mysql_version.h')
+    conf.check_cxx(lib = 'mysqlclient', define_name = 'HAVE_MYSQLCLIENT', uselib_store = 'mysqlclient', mandatory = True)
     conf.check_cxx(lib = 'mysqlpp', define_name = 'HAVE_MYSQLPP', uselib_store = 'mysqlpp', mandatory = True)
 
     conf.env.append_value('CXXFLAGS', '-std=c++11');
