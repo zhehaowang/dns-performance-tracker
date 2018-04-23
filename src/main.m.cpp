@@ -1,33 +1,174 @@
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <memory>
 #include <vector>
+#include <cassert>
+#include <chrono>
+#include <thread>
+#include <getopt.h>
 
 #include <query_sender.h>
-//#include <report_cmdlinereporter.h>
 #include <report_mysqlreporter.h>
+
+#define LOGURU_IMPLEMENTATION 1
+#define LOGURU_WITH_STREAMS 1
+#include <loguru.hpp>
+
+struct DBConnectionInfo {
+    std::string dbName;
+    std::string host;
+    std::string user;
+    std::string passwd;
+};
+
+const int DB_CONF_SIZE = 4;
+
+int getDomains(std::vector<std::string> *domains,
+               const std::string&        confFileName) {
+    assert(domains);
+
+    std::ifstream in(confFileName);
+    std::string   line;
+
+    while (std::getline(in, line)) {
+        domains->push_back(line);
+    }
+
+    return 0;
+}
+
+int getDBConnectionInfo(DBConnectionInfo   *conn,
+                        const std::string&  confFileName) {
+    assert(conn);
+
+    std::ifstream in(confFileName);
+    std::string   line;
+    int           size = 0;
+    while (std::getline(in, line) && size < DB_CONF_SIZE) {
+        switch (size) {
+          case 0:
+            conn->dbName = line;
+            break;
+          case 1:
+            conn->host = line;
+            break;
+          case 2:
+            conn->user = line;
+            break;
+          case 3:
+            conn->passwd = line;
+            break;
+        }
+        size += 1;
+    }
+    return size != DB_CONF_SIZE;
+}
+
+void usage() {
+    std::cout << "./dns_performance_tracker\n"
+              << "    [--help, -h]: print this message\n"
+              << "    [--interval, -i]: specify query interval (milliseconds)"
+              << "\n"
+              << "    [--logfile, -l]: specify log file\n"
+              << "    [--dbconf, -d]: specify DB configuration file\n"
+              << "        (format: four consecutive lines of db name,"
+              << " host name, username, passwd)\n"
+              << "    [--siteconf, -s]: specify domains to query (one line"
+              << " each domain)\n"
+              << "    [-v]: console logging verbosity\n";
+}
 
 int main(int argc, char *argv[]) {
     using namespace std;
     using namespace dpt;
+    
+    // Parse command line arguments
+    struct option longOptions[] = {
+        {"interval",  optional_argument, 0, 'i'},
+        {"dbconf",    optional_argument, 0, 'd'},
+        {"siteconf",  optional_argument, 0, 's'},
+        {"logfile",   optional_argument, 0, 'l'},
+        {"help",      optional_argument, 0, 'h'},
+        { 0 }
+    };
 
-    std::cout << "main\n";
+    int         interval = 2000;
+    string dbConfFile("db.conf");
+    string siteConfFile("sites.conf");
+    string logFile("");
 
-   	// query::QuerySender query(std::make_shared<report::CmdlineReporter>());
-   	std::shared_ptr<report::MySQLReporter> reporter =
-   		std::make_shared<report::MySQLReporter>("dpt", "localhost", "root", "12345");
-   	
-   	/*
-   	vector<report::DBRecord> res;
-   	reporter->readStatsRecordByDomain(&res, "domain");
-   	std::cout << res.size() << "\n";
+    //loguru::init(argc, argv);
 
-   	report::DBRecord dbr("domain", 1000, 1, 0, 10, mysqlpp::sql_timestamp("1998-09-25"), mysqlpp::sql_timestamp("1998-09-25"));
-   	reporter->upsertStatsRecordByDomain(dbr, false);
-	*/
+    int c = 0;
+    while (c >= 0) {
+        int optionIndex = 0;
+        c = getopt_long(argc, argv, "i:d:s:l:h", longOptions, &optionIndex);
+      
+        if (c < 0) {
+            break;
+        }
+        switch (c) {
+          case 'i':
+            interval = atoi(optarg);
+            break;
+          case 'd':
+            std::cout << optarg << "\n";
+            dbConfFile = string(optarg);
+            break;
+          case 's':
+            siteConfFile = string(optarg);
+            break;
+          case 'l':
+            logFile = string(optarg);
+            break;
+          case 'h':
+            usage();
+            return 0;
+          default:
+            usage();
+            return 0;
+        }
+    }
 
-   	query::QuerySender query(reporter);
-    query.sendQuery("google.com");
+    if (logFile != "") {
+        loguru::add_file(logFile.c_str(),
+                         loguru::Append,
+                         loguru::Verbosity_MAX);
+    }
+
+    srand(time(NULL));
+    // Initialize Reporter and QuerySender
+    vector<string> domains;
+    if (getDomains(&domains, siteConfFile) || domains.size() == 0) {
+        LOG_S(ERROR) << "Failed to load domains from configuration file '"
+                     << siteConfFile << "'\n";
+        return -1;
+    }
+
+    DBConnectionInfo conn;
+    if (getDBConnectionInfo(&conn, dbConfFile)) {
+        LOG_S(ERROR) << "Failed to load db connection configuration file '"
+                     << dbConfFile << "'\n";
+        return -1;
+    }
+
+    shared_ptr<report::MySQLReporter> reporter =
+        std::make_shared<report::MySQLReporter>(conn.dbName.c_str(),
+                                                conn.host.c_str(),
+                                                conn.user.c_str(),
+                                                conn.passwd.c_str());
+    query::QuerySender query(reporter);
+
+    // Query loop
+    while (true) {
+        LOG_S(INFO) << "Beginning next batch of queries. Sites: "
+                    << domains.size() << ". Interval: " << interval << "ms.";
+        for (auto it = domains.cbegin(); it != domains.cend(); ++it) {
+            query.sendQuery(*it);
+        }
+        this_thread::sleep_for(std::chrono::milliseconds(interval));
+    }
 
     return 0;
 }

@@ -16,7 +16,16 @@ sql_create_7(domain_stats, 1, 7,
     mysqlpp::sql_timestamp, first_time,
     mysqlpp::sql_timestamp, last_time);
 
-typedef domain_stats DBRecord;
+typedef domain_stats StatRecord;
+
+sql_create_5(query_record, 1, 4,
+    mysqlpp::sql_char, domain,
+    mysqlpp::sql_text, status,
+    mysqlpp::sql_bigint, duration,
+    mysqlpp::sql_timestamp, timestamp,
+    mysqlpp::sql_int, id);
+
+typedef query_record QueryRecord;
 
 }
 }

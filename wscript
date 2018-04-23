@@ -17,6 +17,12 @@ def options(opt):
                    dest = 'mysql_inc',
                    help = '''MySQL library include path''')
 
+    opt.add_option('--with-tests',
+                   action = 'store_true',
+                   default = False,
+                   dest = 'with_tests',
+                   help = '''Compile unit tests''')
+
 def configure(conf):
     conf.load('compiler_c compiler_cxx')
 
@@ -31,14 +37,31 @@ def configure(conf):
     conf.check_cxx(lib = 'mysqlclient', define_name = 'HAVE_MYSQLCLIENT', uselib_store = 'mysqlclient', mandatory = True)
     conf.check_cxx(lib = 'mysqlpp', define_name = 'HAVE_MYSQLPP', uselib_store = 'mysqlpp', mandatory = True)
 
+    if conf.options.with_tests:
+        conf.check_cxx(lib = 'gtest', define_name = 'HAVE_GTEST', uselib_store = 'gtest', mandatory = True)
+
+    conf.env['WITH_TESTS'] = conf.options.with_tests
     conf.env.append_value('CXXFLAGS', '-std=c++11');
 
 def build(bld):
+    bld(features='subst', source='conf/db.sample.conf', target='db.conf', is_copy=True)
+    bld(features='subst', source='conf/sites.sample.conf', target='sites.conf', is_copy=True)
     bld(
         features = 'c cxx cxxprogram',
-        source   = bld.path.ant_glob('src/**/*.cpp'),
-        use      = 'ldns mysqlclient mysqlpp',
+        source   = bld.path.ant_glob('src/**/*.cpp', excl = ['src/**/*.t.cpp']),
+        use      = 'ldns mysqlclient mysqlpp gtest',
         target   = 'dns_performance_tracker',
         export_includes = '.',
-        includes = 'src src/query src/report'
+        includes = 'src src/query src/report thirdparty/loguru'
     )
+
+    if bld.env['WITH_TESTS']:
+        bld(
+            features = 'c cxx cxxprogram',
+            source   = bld.path.ant_glob('src/**/*.t.cpp', excl = ['src/**/*.m.cpp']),
+            use      = 'gtest',
+            target   = 'tests',
+            export_includes = '.',
+            includes = 'src src/query src/report thirdparty/loguru'
+        )
+        

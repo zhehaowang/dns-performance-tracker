@@ -17,13 +17,15 @@ struct QueryUtil {
                               double total,
                               double count,
                               double sample);
-        // Calculate the new variance given existing 'variance', 'avg', 'count',
-        // 'total' and the new 'sample' using Welford method
+        // Calculate the new population variance given existing 'variance',
+        // 'avg', 'count', 'total' and the new 'sample' using Welford method
 
     static double getStdDeviation(double variance);
         // Get standard deviation given 'variance'
 
     static std::string prependRandomDomain(const std::string& domain, int len);
+        // Return a string that consists of a random string of length 'len'
+        // prepended to given 'domain'
 };
 
 
@@ -43,8 +45,7 @@ double QueryUtil::newVariance(double variance,
                               double count,
                               double sample) {
     double newAvg = (total + sample) / (count + 1);
-    return ((count - 1) * variance + (sample - newAvg) * (sample - avg))
-             / count;
+    return (count * variance + (sample - avg) * (sample - newAvg)) / (count + 1);
 }
 
 }

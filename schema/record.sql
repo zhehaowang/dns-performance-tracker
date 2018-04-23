@@ -14,10 +14,10 @@ CREATE TABLE IF NOT EXISTS domain_stats (
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS query_record (
-    id              INT  NOT NULL AUTO_INCREMENT,
     domain          TEXT,
     status          TEXT,
-    total_ns        BIGINT UNSIGNED DEFAULT 0,
+    duration        BIGINT UNSIGNED DEFAULT 0,
     timestamp       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    id              INT  NOT NULL AUTO_INCREMENT,
     PRIMARY KEY(id)
 ) ENGINE = InnoDB;
