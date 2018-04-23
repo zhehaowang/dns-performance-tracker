@@ -67,14 +67,14 @@ int getDBConnectionInfo(DBConnectionInfo   *conn,
 
 void usage() {
     std::cout << "./dns_performance_tracker\n"
-              << "    [--help, -h]: print this message\n"
-              << "    [--interval, -i]: specify query interval (milliseconds)"
+              << "    [-h]: print this message\n"
+              << "    [-i]: specify query interval (milliseconds)"
               << "\n"
-              << "    [--logfile, -l]: specify log file\n"
-              << "    [--dbconf, -d]: specify DB configuration file\n"
+              << "    [-l]: specify log file\n"
+              << "    [-d]: specify DB configuration file\n"
               << "        (format: four consecutive lines of db name,"
               << " host name, username, passwd)\n"
-              << "    [--siteconf, -s]: specify domains to query (one line"
+              << "    [-s]: specify domains to query (one line"
               << " each domain)\n"
               << "    [-v]: console logging verbosity\n";
 }
@@ -83,27 +83,17 @@ int main(int argc, char *argv[]) {
     using namespace std;
     using namespace dpt;
     
-    // Parse command line arguments
-    struct option longOptions[] = {
-        {"interval",  optional_argument, 0, 'i'},
-        {"dbconf",    optional_argument, 0, 'd'},
-        {"siteconf",  optional_argument, 0, 's'},
-        {"logfile",   optional_argument, 0, 'l'},
-        {"help",      optional_argument, 0, 'h'},
-        { 0 }
-    };
 
     int         interval = 2000;
     string dbConfFile("db.conf");
     string siteConfFile("sites.conf");
     string logFile("");
 
-    //loguru::init(argc, argv);
+    loguru::init(argc, argv);
 
     int c = 0;
     while (c >= 0) {
-        int optionIndex = 0;
-        c = getopt_long(argc, argv, "i:d:s:l:h", longOptions, &optionIndex);
+        c = getopt(argc, argv, "i:d:s:l:h");
       
         if (c < 0) {
             break;
@@ -113,14 +103,13 @@ int main(int argc, char *argv[]) {
             interval = atoi(optarg);
             break;
           case 'd':
-            std::cout << optarg << "\n";
-            dbConfFile = string(optarg);
+            dbConfFile = optarg;
             break;
           case 's':
-            siteConfFile = string(optarg);
+            siteConfFile = optarg;
             break;
           case 'l':
-            logFile = string(optarg);
+            logFile = optarg;
             break;
           case 'h':
             usage();
