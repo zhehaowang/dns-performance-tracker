@@ -45,7 +45,7 @@ Two tables are created
 
 ### Appendix
 
-* This project uses waf as build system, and provides one sample unit test on QueryUtil component. Code style roughly follows that of [BDE](https://github.com/bloomberg/bde)
+* This project uses waf as build system, and provides one sample unit test on QueryUtil component. Code style roughly follows that of [BDE](https://github.com/bloomberg/bde). Uses [loguru](https://github.com/emilk/loguru) as logging system, whose header was included in thirdparty folder 
 * Mock, CI and vagrant distribution were considered, but were not pursued due to lack of time
 * A multi-threaded implementation was considered but not pursued, since no concurrent jobs were identified
 
