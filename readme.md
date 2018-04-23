@@ -21,7 +21,7 @@ To see command line options available, do
 ```
 ./dns_performance_tracker -h
 ```
--i flag configures interval between queries. Note that the actual interval will be time supplied as in this flag + total query times for all domains combined.
+-i flag configures interval in milliseconds between queries. Note that the actual interval will be time supplied as in this flag + total query times for all domains combined.
 
 ### What to expect
 
@@ -33,7 +33,7 @@ The same information is stored in MySQL database, and the program will keep coll
 
 * Two units of releases are created, 'query' and 'report'
   * 'query' is high level business object, which uses ldns to interact with given domains, and a reporter interface to report and update statistics.
-  * 'report' provides a reporting interface, and a MySQL DB accessor as one concrete implementation. 'report' defines the data model of individual stat reports, and that of DB interaction in MySQL accessor's case.
+  * 'report' provides a reporting interface, and a MySQL DB accessor as one concrete implementation. 'report' defines the data model of individual stat reports, and that of DB interaction in MySQL accessor's case (using mysql++ ssqls).
 
 ### DB Schema Design
 
@@ -47,7 +47,7 @@ Two tables are created
 
 * This project uses waf as build system, and provides one sample unit test on QueryUtil component. Code style roughly follows that of [BDE](https://github.com/bloomberg/bde). Uses [loguru](https://github.com/emilk/loguru) as logging system, whose header was included in thirdparty folder 
 * Mock, CI and vagrant distribution were considered, but were not pursued due to lack of time
-* A multi-threaded implementation was considered but not pursued, since no concurrent jobs were identified
+* A multi-threaded implementation was considered but not pursued, since no other jobs that need to be done concurrently were identified
 
 
 zhehao@remap.ucla.edu
