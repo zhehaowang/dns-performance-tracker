@@ -149,14 +149,13 @@ int MySQLReporter::reportRecord(const Record& record) {
     // Update stats of the domain in record
     if (stats.size()) {
         StatRecord& stat = stats[0];
+        auto lastQueryTime = stat.last_time;
         stat.last_time = now;
         if (record.isSuccess()) {
-
-            LOG_S(TRACE) << stat.variance << "\n" << stat.number_success
-                         << "\n" << stat.total_duration;
             stat.variance = query::QueryUtil::newVariance(
                                 stat.variance,
-                                stat.total_duration / stat.number_success,
+                                static_cast<double>(stat.total_duration)
+                                    / stat.number_success,
                                 stat.total_duration,
                                 stat.number_success,
                                 record.duration());
@@ -167,6 +166,20 @@ int MySQLReporter::reportRecord(const Record& record) {
             stat.number_fail += 1;
             ret = upsertStatsRecordByDomain(stat, false);
         }
+
+        LOG_S(INFO) << "\n=== Domain " << record.domain() << " ===\n"
+                    << "  Average query time (ms):       "
+                    << static_cast<double>(stat.total_duration)
+                        / stat.number_success << "\n"
+                    << "  Std Deviation query time (ms): "
+                    << query::QueryUtil::getStdDeviation(stat.variance) << "\n"
+                    << "  Total # of queries:            "
+                    << stat.number_success + stat.number_fail << "\n"
+                    << "  Timestamp of first query:      "
+                    << stat.first_time << "\n"
+                    << "  Timestamp of last query:       "
+                    << lastQueryTime << "\n"
+                    << "\n";
     } else {
         report::StatRecord stat(record.domain(),
                                 0,
@@ -175,6 +188,16 @@ int MySQLReporter::reportRecord(const Record& record) {
                                 record.isSuccess() ? record.duration() : 0,
                                 now,
                                 now);
+
+        LOG_S(INFO) << "\n=== Domain " << record.domain() << "===\n"
+                    << "  Average query time (ms):         "
+                    << stat.total_duration << "\n"
+                    << "  Std Deviation query time (ms):   0\n"
+                    << "  Total # of queries:              "
+                    << stat.number_success + stat.number_fail << "\n"
+                    << "  Timestamp of first / last query: now\n"
+                    << "\n";
+
         ret = upsertStatsRecordByDomain(stat, true);
     }
 
